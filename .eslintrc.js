@@ -4,7 +4,13 @@ module.exports = {
     es2021: true,
     'react-native/react-native': true,
   },
-  extends: ['plugin:react/recommended', 'airbnb', 'prettier'],
+  extends: [
+    'plugin:react/recommended',
+    'airbnb',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
@@ -26,5 +32,20 @@ module.exports = {
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
     'no-use-before-define': 'off',
     'react/style-prop-object': 'off',
+    'arrow-body-style': 'off',
+    'react/function-component-definition': [
+      'error',
+      {
+        namedComponents: ['function-declaration', 'arrow-function'],
+        unnamedComponents: ['arrow-function'],
+      },
+    ],
+    'import/no-unresolved': 'off',
+    'import/extensions': 'off',
+    'no-shadow': 'off',
+    '@typescript-eslint/no-shadow': 'error',
+    'react/jsx-props-no-spreading': 'off',
+    'react/require-default-props': 'off',
+    'no-param-reassign': 'off',
   },
 };
