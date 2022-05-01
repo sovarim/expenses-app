@@ -23,48 +23,48 @@ const ExpenseCard = ({
     <Card row {...props}>
       <Card.Section
         content={[
-          { text: 'Название', text90H: true, $textDisabled: true },
-          { text: name, text70: true, $textPrimary: true },
+          { text: 'Название', t3: true, $textDisabled: true },
+          { text: name, t1: true, $textPrimary: true },
           {
             text: 'Дата',
-            text90H: true,
+            t3: true,
             $textDisabled: true,
             'marginT-8': true,
             'marginB-4': true,
           },
           {
             text: `${startDate} - ${endDate}`,
-            text80: true,
+            t2: true,
             textColor: true,
           },
         ]}
         padding-20
       />
-      <View flexG padding-20>
+      <View flexG paddingV-20 paddingR-20>
         <View flex right>
-          <Text text90H $textDisabled>
+          <Text t3 $textDisabled>
             Бюджет
           </Text>
-          <Text text70 $textPrimary>
+          <Text t1 $textPrimary>
             {formatNumber(budget)}₽
           </Text>
         </View>
         <View row flex spread marginT-8>
           <View>
-            <Text text90H $textDisabled>
+            <Text t3 $textDisabled>
               Потрачено
             </Text>
             <View flex right>
-              <Text text80 $textDangerLight>
+              <Text t2 $textDangerLight>
                 {formatNumber(spent)}₽
               </Text>
             </View>
           </View>
           <View flex right>
-            <Text text90H $textDisabled>
+            <Text t3 $textDisabled>
               Осталось
             </Text>
-            <Text text80 $textSuccess>
+            <Text t2 $textSuccess>
               {formatNumber(remain)}₽
             </Text>
           </View>
