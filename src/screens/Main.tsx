@@ -1,16 +1,31 @@
 import { BorderRadiuses, Button, Colors, Shadows, Text, View } from 'react-native-ui-lib';
-import { FlatList } from 'react-native-gesture-handler';
+import { FlatList, PanGestureHandler } from 'react-native-gesture-handler';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
 import { ListRenderItem, StyleSheet } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
+import { initialWindowMetrics } from 'react-native-safe-area-context';
 
+import Animated, {
+  Extrapolate,
+  interpolate,
+  runOnJS,
+  scrollTo,
+  useAnimatedGestureHandler,
+  useAnimatedRef,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { useRef, useState } from 'react';
 import SafeAreaView from '../components/SafeAreaView';
 import ExpenseCard, { ExpenseCardProps } from '../components/ExpenseCard';
 import formatNumber from '../utils/formatNumber';
+import dimensions from '../constants/dimensions';
 
-const DELAY_LONG_PRESS = 100;
+const BALANCE_VIEW_DEFAULT_HEIGHT = 200;
+const BALANCE_VIEW_MIN_HEIGHT = 100;
 
 const PlusIcon = () => {
   return <MaterialCommunityIcons name="plus" size={36} color={Colors.white} />;
@@ -18,15 +33,37 @@ const PlusIcon = () => {
 
 const Main = () => {
   const navigation = useNavigation();
-  const [selectections, setSelections] = useState<{ [key: number]: boolean }>({});
+  const balanceViewHeight = useSharedValue(BALANCE_VIEW_DEFAULT_HEIGHT);
+  const faltScroll = useSharedValue(0);
+  const listRef = useAnimatedRef<Animated.FlatList>();
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (e, ctx: { startY: number }) => {
+      ctx.startY = e.y;
+    },
+    onActive: (e, ctx: { startY: number }) => {
+      const diffrence = ctx.startY - e.y;
+      const newHeight = balanceViewHeight.value - diffrence;
+      balanceViewHeight.value = interpolate(
+        newHeight,
+        [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT],
+        [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT],
+        { extrapolateLeft: Extrapolate.CLAMP, extrapolateRight: Extrapolate.CLAMP },
+      );
+    },
+  });
+
+  const balanceViewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      height: balanceViewHeight.value,
+    };
+  });
 
   const renderExpenseCard: ListRenderItem<ExpenseCardProps & { id: string }> = ({ item }) => {
     const { name, startDate, endDate, budget, spent, remain } = item;
-
     return (
       <ExpenseCard
         marginB-12
-        // eslint-disable-next-line react/no-array-index-key
         name={name}
         startDate={startDate}
         endDate={endDate}
@@ -39,8 +76,8 @@ const Main = () => {
   };
 
   return (
-    <SafeAreaView flexG bg-primary>
-      <View center style={styles.balanceView}>
+    <SafeAreaView reanimated flexG bg-primary>
+      <View reanimated center style={balanceViewAnimatedStyle}>
         <View row center>
           <View
             br100
@@ -59,47 +96,53 @@ const Main = () => {
           </Text>
         </View>
       </View>
-      <View flex bg-screenBG style={styles.expensesView}>
-        <View paddingH-20 marginB-8 marginT-8>
-          <Text h3 textColor>
-            Расходы
-          </Text>
-        </View>
-        <FlatList
-          style={styles.flatList}
-          data={data}
-          renderItem={renderExpenseCard}
-          keyExtractor={(item) => item.id}
-        />
-        <View absB absR marginB-16 marginR-16>
-          <Button
-            padding-8
-            iconSource={PlusIcon}
-            onPress={() => navigation.navigate('AddExpense')}
+      <PanGestureHandler onGestureEvent={gestureHandler}>
+        <View reanimated flex bg-screenBG style={styles.expensesView}>
+          <View paddingH-20 marginB-8 marginT-8>
+            <Text h3 textColor>
+              Расходы
+            </Text>
+          </View>
+          <Animated.FlatList
+            ref={listRef}
+            style={styles.flatList}
+            data={data}
+            renderItem={renderExpenseCard}
+            keyExtractor={(item) => item.id}
+            overScrollMode="never"
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
           />
+          <View absB absR marginB-16 marginR-16>
+            <Button
+              padding-8
+              iconSource={PlusIcon}
+              onPress={() => navigation.navigate('AddExpense')}
+            />
+          </View>
         </View>
-      </View>
+      </PanGestureHandler>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  balanceView: {
-    height: 200,
-    backgroundColor: Colors.primary,
-  },
   expensesView: {
     borderTopLeftRadius: BorderRadiuses.br60,
     borderTopRightRadius: BorderRadiuses.br60,
     ...Shadows.sh30.top,
   },
   flatList: {
-    flex: 1,
+    height:
+      dimensions.height -
+      (initialWindowMetrics?.insets.bottom || 0) -
+      (initialWindowMetrics?.insets.top || 0) +
+      BALANCE_VIEW_DEFAULT_HEIGHT,
     paddingHorizontal: 10,
   },
 });
 
-const data = Array(6)
+const data = Array(10)
   .fill({
     name: 'September',
     startDate: '20/02/2022',
