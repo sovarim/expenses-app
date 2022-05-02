@@ -17,8 +17,9 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
   withTiming,
+  measure,
 } from 'react-native-reanimated';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import SafeAreaView from '../components/SafeAreaView';
 import ExpenseCard, { ExpenseCardProps } from '../components/ExpenseCard';
 import formatNumber from '../utils/formatNumber';
@@ -34,8 +35,12 @@ const PlusIcon = () => {
 const Main = () => {
   const navigation = useNavigation();
   const balanceViewHeight = useSharedValue(BALANCE_VIEW_DEFAULT_HEIGHT);
-  const faltScroll = useSharedValue(0);
-  const listRef = useAnimatedRef<Animated.FlatList>();
+  const listRef = useAnimatedRef<FlatList>();
+  const listScrollOffsetRef = useSharedValue(0);
+
+  // const scroll = useCallback((offset: number) => {
+  //   listRef.current?.scrollToOffset({ offset, animated: false });
+  // }, []);
 
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (e, ctx: { startY: number }) => {
@@ -44,12 +49,17 @@ const Main = () => {
     onActive: (e, ctx: { startY: number }) => {
       const diffrence = ctx.startY - e.y;
       const newHeight = balanceViewHeight.value - diffrence;
-      balanceViewHeight.value = interpolate(
-        newHeight,
-        [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT],
-        [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT],
-        { extrapolateLeft: Extrapolate.CLAMP, extrapolateRight: Extrapolate.CLAMP },
-      );
+      const range = [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT];
+      balanceViewHeight.value = interpolate(newHeight, range, range, {
+        extrapolateLeft: Extrapolate.CLAMP,
+        extrapolateRight: Extrapolate.CLAMP,
+      });
+      if (balanceViewHeight.value === BALANCE_VIEW_MIN_HEIGHT) {
+        const listHeight = measure(listRef).height;
+        const newOffset = Math.min(listScrollOffsetRef.value + diffrence, listHeight);
+        listScrollOffsetRef.value = newOffset;
+        scrollTo(listRef, 0, diffrence, false);
+      }
     },
   });
 
@@ -103,7 +113,7 @@ const Main = () => {
               Расходы
             </Text>
           </View>
-          <Animated.FlatList
+          <FlatList
             ref={listRef}
             style={styles.flatList}
             data={data}
