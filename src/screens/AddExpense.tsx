@@ -1,15 +1,21 @@
-import { BorderRadiuses, Text, View, Colors } from 'react-native-ui-lib';
+import { BorderRadiuses, View } from 'react-native-ui-lib';
 import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import dimensions from '../constants/dimensions';
+import useIsDark from '../hooks/useIsDark';
+import ExpenseCalculator from '../components/ExpenseCalculator';
 
 const AddExpense = () => {
   const navigation = useNavigation();
+
+  const isDark = useIsDark();
+
   return (
     <BlurView
-      intensity={150}
+      intensity={100}
       style={styles.root}
+      tint={isDark ? 'dark' : 'light'}
       onStartShouldSetResponder={() => {
         navigation.goBack();
         return true;
@@ -17,14 +23,18 @@ const AddExpense = () => {
     >
       <View
         flexG
-        padding-20
+        bg-screenBG
         style={styles.container}
         onStartShouldSetResponder={(e) => {
           e.stopPropagation();
           return false;
         }}
       >
-        <Text>Add expense</Text>
+        <ExpenseCalculator
+          onConfirm={(value) => {
+            console.log(value);
+          }}
+        />
       </View>
     </BlurView>
   );
@@ -38,7 +48,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: BorderRadiuses.br60,
     borderTopRightRadius: BorderRadiuses.br60,
     marginTop: Math.round(dimensions.height / 2.5),
-    backgroundColor: Colors.rgba(Colors.white80, 0.9),
+    overflow: 'hidden',
   },
 });
 

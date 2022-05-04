@@ -1,8 +1,9 @@
 import { Colors } from 'react-native-ui-lib';
 
 Colors.loadColors({
-  white80: Colors.getColorTint(Colors.white, 80),
   white10: Colors.getColorTint(Colors.white, 10),
+  white20: Colors.getColorTint(Colors.white, 20),
+  white80: Colors.getColorTint(Colors.white, 80),
 });
 
 Colors.loadSchemes({

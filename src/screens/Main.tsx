@@ -1,71 +1,92 @@
-import { BorderRadiuses, Button, Colors, Shadows, Text, View } from 'react-native-ui-lib';
-import { FlatList, PanGestureHandler } from 'react-native-gesture-handler';
+import {
+  BorderRadiuses,
+  Button,
+  Colors,
+  Shadows,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native-ui-lib';
+import { FlatList } from 'react-native-gesture-handler';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { ListRenderItem, StyleSheet } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { initialWindowMetrics } from 'react-native-safe-area-context';
-
 import Animated, {
   Extrapolate,
   interpolate,
-  runOnJS,
-  scrollTo,
-  useAnimatedGestureHandler,
-  useAnimatedRef,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
+  useAnimatedScrollHandler,
   withTiming,
-  measure,
+  eq,
+  withSpring,
+  lessThan,
+  cond,
 } from 'react-native-reanimated';
-import { useCallback, useRef, useState } from 'react';
+
+import { FormattedNumber } from 'react-intl';
 import SafeAreaView from '../components/SafeAreaView';
 import ExpenseCard, { ExpenseCardProps } from '../components/ExpenseCard';
-import formatNumber from '../utils/formatNumber';
 import dimensions from '../constants/dimensions';
+import { IconSizes } from '../styles/sizes';
 
 const BALANCE_VIEW_DEFAULT_HEIGHT = 200;
-const BALANCE_VIEW_MIN_HEIGHT = 100;
+const BALANCE_VIEW_MIN_HEIGHT = 70;
+
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 const PlusIcon = () => {
-  return <MaterialCommunityIcons name="plus" size={36} color={Colors.white} />;
+  return <MaterialCommunityIcons name="plus" size={IconSizes.xl} color={Colors.white} />;
 };
 
 const Main = () => {
   const navigation = useNavigation();
-  const balanceViewHeight = useSharedValue(BALANCE_VIEW_DEFAULT_HEIGHT);
-  const listRef = useAnimatedRef<FlatList>();
-  const listScrollOffsetRef = useSharedValue(0);
+  const scrollY = useSharedValue(0);
+  const showAddButton = useSharedValue(true);
 
-  // const scroll = useCallback((offset: number) => {
-  //   listRef.current?.scrollToOffset({ offset, animated: false });
-  // }, []);
-
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (e, ctx: { startY: number }) => {
-      ctx.startY = e.y;
+  const scrollHandler = useAnimatedScrollHandler({
+    onBeginDrag: (e, ctx: { prevScrollY: number }) => {
+      ctx.prevScrollY = e.contentOffset.y;
     },
-    onActive: (e, ctx: { startY: number }) => {
-      const diffrence = ctx.startY - e.y;
-      const newHeight = balanceViewHeight.value - diffrence;
-      const range = [BALANCE_VIEW_MIN_HEIGHT, BALANCE_VIEW_DEFAULT_HEIGHT];
-      balanceViewHeight.value = interpolate(newHeight, range, range, {
-        extrapolateLeft: Extrapolate.CLAMP,
-        extrapolateRight: Extrapolate.CLAMP,
-      });
-      if (balanceViewHeight.value === BALANCE_VIEW_MIN_HEIGHT) {
-        const listHeight = measure(listRef).height;
-        const newOffset = Math.min(listScrollOffsetRef.value + diffrence, listHeight);
-        listScrollOffsetRef.value = newOffset;
-        scrollTo(listRef, 0, diffrence, false);
-      }
+    onScroll: (e, ctx: { prevScrollY: number }) => {
+      scrollY.value = e.contentOffset.y;
+      showAddButton.value = ctx.prevScrollY > e.contentOffset.y;
+      ctx.prevScrollY = e.contentOffset.y;
     },
   });
 
   const balanceViewAnimatedStyle = useAnimatedStyle(() => {
+    const height = interpolate(
+      scrollY.value,
+      [0, BALANCE_VIEW_DEFAULT_HEIGHT],
+      [BALANCE_VIEW_DEFAULT_HEIGHT, BALANCE_VIEW_MIN_HEIGHT],
+      Extrapolate.CLAMP,
+    );
     return {
-      height: balanceViewHeight.value,
+      height: withSpring(height),
+    };
+  });
+
+  const balanceTitleViewAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, BALANCE_VIEW_DEFAULT_HEIGHT - 50],
+      [1, 0],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      opacity: withTiming(opacity),
+      height: opacity ? withTiming(14) : withTiming(0),
+    };
+  });
+
+  const addButtonViewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: showAddButton.value ? withTiming(0) : withTiming(250) }],
     };
   });
 
@@ -86,52 +107,52 @@ const Main = () => {
   };
 
   return (
-    <SafeAreaView reanimated flexG bg-primary>
+    <SafeAreaView flexG bg-primary>
+      <View absR absT style={styles.settingsButtonView}>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <MaterialIcons name="settings" color={Colors.white80} size={IconSizes.md} />
+        </TouchableOpacity>
+      </View>
       <View reanimated center style={balanceViewAnimatedStyle}>
+        <View reanimated style={balanceTitleViewAnimatedStyle}>
+          <Text grey40 t4 uppercase>
+            Текущий баланс
+          </Text>
+        </View>
         <View row center>
-          <View
-            br100
-            center
-            marginR-4
-            width={25}
-            height={25}
-            backgroundColor={Colors.rgba(Colors.black, 0.4)}
-          >
+          <TouchableOpacity br100 center marginR-4 style={styles.currencyButton}>
             <Text t1 white>
               ₽
             </Text>
-          </View>
+          </TouchableOpacity>
           <Text h1 white>
-            {formatNumber(10000)}
+            <FormattedNumber value={17264} />
           </Text>
         </View>
       </View>
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <View reanimated flex bg-screenBG style={styles.expensesView}>
-          <View paddingH-20 marginB-8 marginT-8>
-            <Text h3 textColor>
-              Расходы
-            </Text>
-          </View>
-          <FlatList
-            ref={listRef}
-            style={styles.flatList}
-            data={data}
-            renderItem={renderExpenseCard}
-            keyExtractor={(item) => item.id}
-            overScrollMode="never"
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-          />
-          <View absB absR marginB-16 marginR-16>
-            <Button
-              padding-8
-              iconSource={PlusIcon}
-              onPress={() => navigation.navigate('AddExpense')}
-            />
-          </View>
+      <View flex bg-screenBG style={styles.expensesView}>
+        <View paddingH-20 marginV-12>
+          <Text h3 textColor>
+            Расходы
+          </Text>
         </View>
-      </PanGestureHandler>
+        <AnimatedFlatList
+          style={styles.flatList}
+          data={data}
+          renderItem={renderExpenseCard}
+          keyExtractor={(item: typeof data[number]) => item.id}
+          onScroll={scrollHandler}
+          overScrollMode="never"
+          scrollEventThrottle={16}
+        />
+        <View reanimated absB absR marginB-16 marginR-16 style={addButtonViewAnimatedStyle}>
+          <Button
+            padding-8
+            iconSource={PlusIcon}
+            onPress={() => navigation.navigate('AddExpense')}
+          />
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -149,6 +170,16 @@ const styles = StyleSheet.create({
       (initialWindowMetrics?.insets.top || 0) +
       BALANCE_VIEW_DEFAULT_HEIGHT,
     paddingHorizontal: 10,
+  },
+  currencyButton: {
+    width: 25,
+    height: 25,
+    backgroundColor: Colors.rgba(Colors.black, 0.4),
+  },
+  settingsButtonView: {
+    paddingTop: (initialWindowMetrics?.insets.top || 0) + 12,
+    paddingRight: 12,
+    zIndex: 10,
   },
 });
 

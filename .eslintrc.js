@@ -19,7 +19,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['react', 'react-native', '@typescript-eslint', 'prettier'],
+  plugins: ['react', 'react-native', 'formatjs', '@typescript-eslint', 'prettier'],
   rules: {
     'prettier/prettier': 'error',
     'react/react-in-jsx-scope': 'off',
@@ -49,5 +49,6 @@ module.exports = {
     'no-param-reassign': 'off',
     'import/prefer-default-export': 'off',
     'global-require': 'off',
+    'formatjs/no-offset': 'error',
   },
 };

@@ -1,5 +1,6 @@
-import { Card, Text, View, CardProps } from 'react-native-ui-lib';
-import formatNumber from '../utils/formatNumber';
+import { Component, memo, RefObject } from 'react';
+import { FormattedNumber } from 'react-intl';
+import { Card, Text, View, CardProps, ViewProps } from 'react-native-ui-lib';
 
 export type ExpenseCardProps = {
   name: string;
@@ -19,8 +20,13 @@ const ExpenseCard = ({
   remain,
   ...props
 }: ExpenseCardProps) => {
+  const formattedNumberProps = {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0,
+  } as const;
   return (
-    <Card row {...props}>
+    <Card row enableShadow={false} {...props}>
       <Card.Section
         content={[
           { text: 'Название', t3: true, $textDisabled: true },
@@ -46,7 +52,7 @@ const ExpenseCard = ({
             Бюджет
           </Text>
           <Text t1 $textPrimary>
-            {formatNumber(budget)}₽
+            <FormattedNumber value={budget} {...formattedNumberProps} />
           </Text>
         </View>
         <View row flex spread marginT-8>
@@ -56,7 +62,7 @@ const ExpenseCard = ({
             </Text>
             <View flex right>
               <Text t2 $textDangerLight>
-                {formatNumber(spent)}₽
+                <FormattedNumber value={spent} {...formattedNumberProps} />
               </Text>
             </View>
           </View>
@@ -65,7 +71,7 @@ const ExpenseCard = ({
               Осталось
             </Text>
             <Text t2 $textSuccess>
-              {formatNumber(remain)}₽
+              <FormattedNumber value={remain} {...formattedNumberProps} />
             </Text>
           </View>
         </View>
@@ -74,4 +80,4 @@ const ExpenseCard = ({
   );
 };
 
-export default ExpenseCard;
+export default memo(ExpenseCard);
