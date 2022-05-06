@@ -1,13 +1,33 @@
-import { memo, useState } from 'react';
-import { Colors, Text, Typography, View } from 'react-native-ui-lib';
+import {
+  ClassAttributes,
+  ComponentClass,
+  createRef,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Colors,
+  Text,
+  Typography,
+  View,
+  Incubator,
+  Button,
+  BorderRadiuses,
+} from 'react-native-ui-lib';
 import { FormattedNumber } from 'react-intl';
+import { StyleSheet, Modal, KeyboardAvoidingView, TextInput, Keyboard } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { OpenSans } from '../styles/fonts';
 import CalculatorKeys, { CalculatorKey } from './CalculatorKeys';
 import useCalculatorKeyTapHandler, { CalculatorHandler } from '../hooks/useCalculatorKeyTapHandler';
 import calculate, { CalculateFunctionType } from '../utils/calculate';
+import Backdrop from './Backdrop';
+import { IconSizes } from '../styles/sizes';
 
-// export type AddExpenseFormProps = {};
-
+const { TextField } = Incubator;
 const MAXIMUM_FRACTION_DIGITS = 2;
 
 const isLastDot = (str: string) => str.charAt(str.length - 1) === '.';
@@ -74,8 +94,18 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
     onConfirm: () => onConfirm(Number(sumLeftValue)),
   });
 
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = useCallback(() => {
+    setModalOpen(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+  }, []);
+
   return (
-    <View flex>
+    <View flexG>
       <View center height={70} bg-primary>
         <View row center>
           <Text
@@ -121,10 +151,48 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
         </View>
       </View>
       <View flex padding-4>
+        <View paddingH-8 paddingB-8>
+          <Text t1I textColor grey30 center onPress={openModal} style={styles.nameText}>
+            Название
+          </Text>
+        </View>
         <CalculatorKeys onPress={calclatorKeyTapHandler} />
+        <Modal transparent animationType="fade" visible={modalOpen} onRequestClose={closeModal}>
+          <ModalContent />
+        </Modal>
       </View>
     </View>
   );
 };
+
+const ModalContent = () => {
+  return (
+    <Backdrop flex center paddingH-20>
+      <View width="100%" bg-screenBG br30 paddingH-20 paddingV-10>
+        <TextField placeholder="Название" textColor style={styles.nameField} />
+        <View row right marginT-8>
+          <Button bg-green30 borderRadius={BorderRadiuses.br20} size={Button.sizes.xSmall}>
+            <MaterialIcons name="done" color="white" size={IconSizes.xs} />
+          </Button>
+        </View>
+      </View>
+    </Backdrop>
+  );
+};
+
+const styles = StyleSheet.create({
+  nameField: {
+    ...Typography.t1I,
+    textAlign: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grey40,
+    width: '100%',
+    marginBottom: 4,
+  },
+  nameText: {
+    borderBottomColor: Colors.grey40,
+    borderBottomWidth: 1,
+  },
+});
 
 export default memo(ExpenseCalculator);

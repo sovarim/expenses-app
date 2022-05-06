@@ -1,54 +1,35 @@
 import { BorderRadiuses, View } from 'react-native-ui-lib';
-import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { initialWindowMetrics } from 'react-native-safe-area-context';
 import dimensions from '../constants/dimensions';
-import useIsDark from '../hooks/useIsDark';
 import ExpenseCalculator from '../components/ExpenseCalculator';
+import Backdrop from '../components/Backdrop';
 
 const AddExpense = () => {
-  const navigation = useNavigation();
-
-  const isDark = useIsDark();
-
   return (
-    <BlurView
-      intensity={100}
-      style={styles.root}
-      tint={isDark ? 'dark' : 'light'}
-      onStartShouldSetResponder={() => {
-        navigation.goBack();
-        return true;
-      }}
-    >
-      <View
-        flexG
-        bg-screenBG
-        style={styles.container}
-        onStartShouldSetResponder={(e) => {
-          e.stopPropagation();
-          return false;
-        }}
-      >
+    <Backdrop style={styles.root}>
+      <View bottom bg-screenBG style={styles.container}>
         <ExpenseCalculator
           onConfirm={(value) => {
             console.log(value);
           }}
         />
       </View>
-    </BlurView>
+    </Backdrop>
   );
 };
 
 const styles = StyleSheet.create({
   root: {
-    flexGrow: 1,
+    minHeight: initialWindowMetrics?.frame.height || dimensions.screen.height,
   },
   container: {
     borderTopLeftRadius: BorderRadiuses.br60,
     borderTopRightRadius: BorderRadiuses.br60,
-    marginTop: Math.round(dimensions.height / 2.5),
+    position: 'absolute',
     overflow: 'hidden',
+    bottom: 0,
+    paddingBottom: 10,
   },
 });
 

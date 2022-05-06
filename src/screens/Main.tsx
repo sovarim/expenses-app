@@ -107,7 +107,7 @@ const Main = () => {
   };
 
   return (
-    <SafeAreaView flexG bg-primary>
+    <SafeAreaView absF bg-primary>
       <View absR absT style={styles.settingsButtonView}>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
           <MaterialIcons name="settings" color={Colors.white80} size={IconSizes.md} />
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   flatList: {
     height:
-      dimensions.height -
+      dimensions.window.height -
       (initialWindowMetrics?.insets.bottom || 0) -
       (initialWindowMetrics?.insets.top || 0) +
       BALANCE_VIEW_DEFAULT_HEIGHT,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const data = Array(10)
+const data = Array(20)
   .fill({
     name: 'September',
     startDate: '20/02/2022',

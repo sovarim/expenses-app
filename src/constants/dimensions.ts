@@ -1,8 +1,9 @@
 import { Dimensions } from 'react-native';
 
-const dimensions = Dimensions.get('window');
+const windowDimensions = Dimensions.get('window');
+const screenDimesions = Dimensions.get('screen');
 
 export default {
-  ...dimensions,
-  isSmall: dimensions.width < 375,
+  screen: screenDimesions,
+  window: windowDimensions,
 };
