@@ -1,24 +1,7 @@
-import {
-  ClassAttributes,
-  ComponentClass,
-  createRef,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import {
-  Colors,
-  Text,
-  Typography,
-  View,
-  Incubator,
-  Button,
-  BorderRadiuses,
-} from 'react-native-ui-lib';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Colors, Text, Typography, View, Button, BorderRadiuses } from 'react-native-ui-lib';
 import { FormattedNumber } from 'react-intl';
-import { StyleSheet, Modal, KeyboardAvoidingView, TextInput, Keyboard } from 'react-native';
+import { StyleSheet, Modal, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { OpenSans } from '../styles/fonts';
 import CalculatorKeys, { CalculatorKey } from './CalculatorKeys';
@@ -27,7 +10,6 @@ import calculate, { CalculateFunctionType } from '../utils/calculate';
 import Backdrop from './Backdrop';
 import { IconSizes } from '../styles/sizes';
 
-const { TextField } = Incubator;
 const MAXIMUM_FRACTION_DIGITS = 2;
 
 const isLastDot = (str: string) => str.charAt(str.length - 1) === '.';
@@ -43,6 +25,7 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
   const [sumLeftValue, setSumLeftValue] = useState('0');
   const [sumRightValue, setSumRightValue] = useState('');
   const [currentFuctionKey, setCurrentFuctionKey] = useState<CalculatorKey | null>(null);
+  const [name, setName] = useState('');
 
   const calclatorKeyTapHandler = useCalculatorKeyTapHandler({
     onKeyTap: (key) => {
@@ -104,6 +87,11 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
     setModalOpen(false);
   }, []);
 
+  const onModalInputConfirm = useCallback((value: string) => {
+    closeModal();
+    setName(value);
+  }, []);
+
   return (
     <View flexG>
       <View center height={70} bg-primary>
@@ -153,25 +141,53 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
       <View flex padding-4>
         <View paddingH-8 paddingB-8>
           <Text t1I textColor grey30 center onPress={openModal} style={styles.nameText}>
-            Название
+            {name || 'Название'}
           </Text>
         </View>
         <CalculatorKeys onPress={calclatorKeyTapHandler} />
         <Modal transparent animationType="fade" visible={modalOpen} onRequestClose={closeModal}>
-          <ModalContent />
+          <ModalInput onConfirm={onModalInputConfirm} initialValue={name} />
         </Modal>
       </View>
     </View>
   );
 };
 
-const ModalContent = () => {
+const ModalInput = ({
+  onConfirm,
+  initialValue,
+}: {
+  onConfirm: (value: string) => void;
+  initialValue: string;
+}) => {
+  const input = useRef<TextInput>(null);
+  const [value, setValue] = useState(initialValue);
+
+  const onChangeText = useCallback((_value: string) => {
+    setValue(_value);
+  }, []);
+
+  useEffect(() => {
+    const inputFocus = () => input.current?.focus();
+    setTimeout(inputFocus, 100);
+  }, [input.current]);
   return (
     <Backdrop flex center paddingH-20>
       <View width="100%" bg-screenBG br30 paddingH-20 paddingV-10>
-        <TextField placeholder="Название" textColor style={styles.nameField} />
+        <TextInput
+          ref={input}
+          placeholder="Название"
+          defaultValue={value}
+          style={styles.nameField}
+          onChangeText={onChangeText}
+        />
         <View row right marginT-8>
-          <Button bg-green30 borderRadius={BorderRadiuses.br20} size={Button.sizes.xSmall}>
+          <Button
+            bg-green30
+            borderRadius={BorderRadiuses.br20}
+            size={Button.sizes.xSmall}
+            onPress={() => onConfirm(value)}
+          >
             <MaterialIcons name="done" color="white" size={IconSizes.xs} />
           </Button>
         </View>
@@ -183,10 +199,10 @@ const ModalContent = () => {
 const styles = StyleSheet.create({
   nameField: {
     ...Typography.t1I,
-    textAlign: 'center',
     borderBottomWidth: 1,
     borderBottomColor: Colors.grey40,
     width: '100%',
+    paddingVertical: 0,
     marginBottom: 4,
   },
   nameText: {
