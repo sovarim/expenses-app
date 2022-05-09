@@ -1,18 +1,25 @@
 import { BorderRadiuses, View } from 'react-native-ui-lib';
 import { StyleSheet } from 'react-native';
 import { initialWindowMetrics } from 'react-native-safe-area-context';
+import { useState } from 'react';
 import dimensions from '../constants/dimensions';
-import ExpenseCalculator from '../components/ExpenseCalculator';
 import Backdrop from '../components/Backdrop';
+import { ExpenseCalculator } from '../components/ExpenseCalculator';
 
 const AddExpense = () => {
+  const [budget, setBudget] = useState('');
+  const [name, setName] = useState('');
   return (
     <Backdrop style={styles.root}>
       <View bottom bg-screenBG style={styles.container}>
         <ExpenseCalculator
+          calendarMarkingType="period"
           onConfirm={(value) => {
             console.log(value);
           }}
+          onChange={setBudget}
+          nameValue={name}
+          onNameChange={setName}
         />
       </View>
     </Backdrop>

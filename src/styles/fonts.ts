@@ -1,6 +1,5 @@
 import { Typography } from 'react-native-ui-lib';
 import { FontSource } from 'expo-font';
-import typography from 'react-native-ui-lib/src/style/typography';
 
 export enum OpenSans {
   w400 = 'OpenSans-Regular',

@@ -10,6 +10,7 @@ export type UseCalculatorKeyTapHandler = (opts: {
   onFunctionChange?: CalculatorHandler;
   onConfirm?: CalculatorHandler;
   onDate?: CalculatorHandler;
+  onCommaTap?: CalculatorHandler;
 }) => CalculatorHandler;
 
 const useCalculatorKeyTapHandler: UseCalculatorKeyTapHandler = ({
@@ -19,9 +20,13 @@ const useCalculatorKeyTapHandler: UseCalculatorKeyTapHandler = ({
   onFunctionChange,
   onConfirm,
   onDate,
+  onCommaTap,
 }) => {
   const handler = useMemoizedFn<CalculatorHandler>((key) => {
     switch (key.code) {
+      case '.':
+        onCommaTap?.(key);
+        break;
       case 'backspace':
         onBackspace?.(key);
         break;

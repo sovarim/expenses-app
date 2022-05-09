@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import {
   Colors,
   Text,
@@ -7,68 +7,81 @@ import {
   Button,
   BorderRadiuses,
   Dialog,
-  Spacings,
 } from 'react-native-ui-lib';
 import { FormattedNumber } from 'react-intl';
-import { StyleSheet, Modal, TextInput } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Calendar } from 'react-native-calendars';
+import { StyleSheet, Modal } from 'react-native';
 import XDate from 'xdate';
-import { OpenSans } from '../styles/fonts';
-import CalculatorKeys, { CalculatorKey } from './CalculatorKeys';
-import useCalculatorKeyTapHandler, { CalculatorHandler } from '../hooks/useCalculatorKeyTapHandler';
-import calculate, { CalculateFunctionType } from '../utils/calculate';
-import Backdrop from './Backdrop';
-import { IconSizes } from '../styles/sizes';
+import { MarkingTypes } from 'react-native-calendars/src/types';
+import { OpenSans } from '../../styles/fonts';
+import CalculatorKeys, { CalculatorKey } from '../CalculatorKeys';
+import useCalculatorKeyTapHandler, {
+  CalculatorHandler,
+} from '../../hooks/useCalculatorKeyTapHandler';
+import calculate, { CalculateFunctionType } from '../../utils/calculate';
+import isLastDot from '../../utils/isLastDot';
+import limitSymbolsAfterDot from '../../utils/limitSymbolsAfterDot';
+import removeLastSymbol from '../../utils/removeLastSymbol';
+import ExpensesModalInput from './ExpensesModalInput';
+import CustomizedCalendar from '../CustomizedCalendar';
+import useIsDark from '../../hooks/useIsDark';
+
+export type ExpenseCalculatorProps = {
+  onConfirm: CalculatorHandler<number>;
+  calendarMarkingType?: MarkingTypes;
+  onChange?: CalculatorHandler<string>;
+  onNameChange?: CalculatorHandler<string>;
+  nameValue: string;
+};
 
 const MAXIMUM_FRACTION_DIGITS = 2;
 
-const isLastDot = (str: string) => str.charAt(str.length - 1) === '.';
-const limitFractionDigits = (str: string) => {
-  const splitted = str.split('.');
-  if (splitted[1]) {
-    splitted[1] = splitted[1].slice(0, MAXIMUM_FRACTION_DIGITS + 1);
-  }
-  return splitted.join('.');
-};
+const includesDot = (str: string) => str.includes('.');
+const addSymbol = (value: string) => (prev: string) =>
+  limitSymbolsAfterDot(`${prev}${value}`, MAXIMUM_FRACTION_DIGITS);
 
-const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number> }) => {
+const removeSymbol = (prev: string) => removeLastSymbol(prev);
+
+const ExpenseCalculator = ({
+  onConfirm,
+  calendarMarkingType = 'dot',
+  onChange,
+  nameValue,
+  onNameChange,
+}: ExpenseCalculatorProps) => {
+  const isDark = useIsDark();
   const [sumLeftValue, setSumLeftValue] = useState('0');
   const [sumRightValue, setSumRightValue] = useState('');
   const [currentFuctionKey, setCurrentFuctionKey] = useState<CalculatorKey | null>(null);
-  const [name, setName] = useState('');
   const [nameDialogVisible, setNameDialogVisible] = useState(false);
   const [calendarDialogVisible, setCalendarDialogVisible] = useState(false);
 
   const calclatorKeyTapHandler = useCalculatorKeyTapHandler({
+    onCommaTap: (key) => {
+      if (currentFuctionKey) {
+        if (includesDot(sumRightValue)) return;
+        setSumRightValue(addSymbol(key.code));
+      } else {
+        if (includesDot(sumLeftValue)) return;
+        setSumLeftValue(addSymbol(key.code));
+      }
+    },
     onKeyTap: (key) => {
       if (currentFuctionKey) {
-        if (key.code === '.' && (sumRightValue.includes('.') || !sumRightValue.length)) {
-          return;
-        }
-
-        setSumRightValue((prev) => limitFractionDigits(`${prev}${key.code}`));
-        return;
+        setSumRightValue(addSymbol(key.code));
+      } else {
+        setSumLeftValue(addSymbol(key.code));
       }
-
-      if (key.code === '.' && (sumLeftValue.includes('.') || !sumLeftValue.length)) {
-        return;
-      }
-
-      setSumLeftValue((prev) => limitFractionDigits(`${prev}${key.code}`));
     },
     onBackspace: () => {
       if (Number(sumRightValue)) {
-        setSumRightValue((prev) => prev.slice(0, prev.length - 1) || '0');
+        setSumRightValue(removeSymbol || '0');
         return;
       }
-
       if (currentFuctionKey) {
         setCurrentFuctionKey(null);
         return;
       }
-
-      setSumLeftValue((prev) => prev.slice(0, prev.length - 1) || '0');
+      setSumLeftValue(removeSymbol || '0');
     },
     onFunctionChange: (key) => {
       setCurrentFuctionKey(key);
@@ -85,13 +98,16 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
             currentFuctionKey.code as CalculateFunctionType,
           ).toString(),
         );
-
         setCurrentFuctionKey(null);
         setSumRightValue('');
       }
     },
     onConfirm: () => onConfirm(Number(sumLeftValue)),
   });
+
+  useEffect(() => {
+    onChange?.(sumRightValue);
+  }, [sumRightValue]);
 
   const showNameDialog = useCallback(() => {
     setNameDialogVisible(true);
@@ -103,7 +119,7 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
 
   const onModalInputConfirm = useCallback((value: string) => {
     closeNameDialog();
-    setName(value);
+    onNameChange?.(value);
   }, []);
 
   const showCalendarDialog = useCallback(() => {
@@ -163,7 +179,7 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
       <View flex padding-s1>
         <View paddingH-s2 paddingB-s2>
           <Text t1I textColor grey30 center onPress={showNameDialog} style={styles.nameText}>
-            {name || 'Название'}
+            {nameValue || 'Название'}
           </Text>
         </View>
         <CalculatorKeys onPress={calclatorKeyTapHandler} />
@@ -173,7 +189,7 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
           visible={nameDialogVisible}
           onRequestClose={closeNameDialog}
         >
-          <ModalInput onConfirm={onModalInputConfirm} initialValue={name} />
+          <ExpensesModalInput initialValue={nameValue} onConfirm={onModalInputConfirm} />
         </Modal>
       </View>
       <Dialog
@@ -184,12 +200,12 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
           borderRadius: BorderRadiuses.br40,
         }}
       >
-        <View bg-white padding-s1>
-          <Calendar
+        <View style={{ backgroundColor: isDark ? Colors.screenBG : Colors.white }} padding-s1>
+          <CustomizedCalendar
+            background="transparent"
             firstDay={1}
             maxDate={new XDate('2022-05-28').toString('yyyy-MM-dd')}
-            style={{ backgroundColor: Colors.transparent }}
-            markingType="period"
+            markingType={calendarMarkingType}
             markedDates={{
               '2022-05-04': {
                 startingDay: true,
@@ -231,58 +247,7 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
   );
 };
 
-const ModalInput = ({
-  onConfirm,
-  initialValue,
-}: {
-  onConfirm: (value: string) => void;
-  initialValue: string;
-}) => {
-  const input = useRef<TextInput>(null);
-  const [value, setValue] = useState(initialValue);
-
-  const onChangeText = useCallback((_value: string) => {
-    setValue(_value);
-  }, []);
-
-  useEffect(() => {
-    const inputFocus = () => input.current?.focus();
-    setTimeout(inputFocus, 100);
-  }, [input.current]);
-  return (
-    <Backdrop flex center paddingH-20>
-      <View width="100%" bg-screenBG br30 paddingH-20 paddingV-10>
-        <TextInput
-          ref={input}
-          placeholder="Название"
-          defaultValue={value}
-          style={styles.nameField}
-          onChangeText={onChangeText}
-        />
-        <View row right marginT-8>
-          <Button
-            bg-green30
-            borderRadius={BorderRadiuses.br20}
-            size={Button.sizes.xSmall}
-            onPress={() => onConfirm(value)}
-          >
-            <MaterialIcons name="done" color="white" size={IconSizes.xs} />
-          </Button>
-        </View>
-      </View>
-    </Backdrop>
-  );
-};
-
 const styles = StyleSheet.create({
-  nameField: {
-    ...Typography.t1I,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grey40,
-    width: '100%',
-    paddingVertical: 0,
-    marginBottom: 4,
-  },
   nameText: {
     borderBottomColor: Colors.grey40,
     borderBottomWidth: 1,
@@ -290,5 +255,3 @@ const styles = StyleSheet.create({
 });
 
 export default memo(ExpenseCalculator);
-
-console.log(new XDate('2022-05-28').toString('yyyy-MM-dd'));
