@@ -4,6 +4,7 @@ Colors.loadColors({
   white10: Colors.getColorTint(Colors.white, 10),
   white20: Colors.getColorTint(Colors.white, 20),
   white80: Colors.getColorTint(Colors.white, 80),
+  backdrop: Colors.rgba(Colors.black, 0.6),
 });
 
 Colors.loadSchemes({

@@ -1,8 +1,19 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Colors, Text, Typography, View, Button, BorderRadiuses } from 'react-native-ui-lib';
+import {
+  Colors,
+  Text,
+  Typography,
+  View,
+  Button,
+  BorderRadiuses,
+  Dialog,
+  Spacings,
+} from 'react-native-ui-lib';
 import { FormattedNumber } from 'react-intl';
 import { StyleSheet, Modal, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Calendar } from 'react-native-calendars';
+import XDate from 'xdate';
 import { OpenSans } from '../styles/fonts';
 import CalculatorKeys, { CalculatorKey } from './CalculatorKeys';
 import useCalculatorKeyTapHandler, { CalculatorHandler } from '../hooks/useCalculatorKeyTapHandler';
@@ -26,6 +37,8 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
   const [sumRightValue, setSumRightValue] = useState('');
   const [currentFuctionKey, setCurrentFuctionKey] = useState<CalculatorKey | null>(null);
   const [name, setName] = useState('');
+  const [nameDialogVisible, setNameDialogVisible] = useState(false);
+  const [calendarDialogVisible, setCalendarDialogVisible] = useState(false);
 
   const calclatorKeyTapHandler = useCalculatorKeyTapHandler({
     onKeyTap: (key) => {
@@ -60,6 +73,9 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
     onFunctionChange: (key) => {
       setCurrentFuctionKey(key);
     },
+    onDate: () => {
+      showCalendarDialog();
+    },
     onResult: () => {
       if (currentFuctionKey) {
         setSumLeftValue(
@@ -77,19 +93,25 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
     onConfirm: () => onConfirm(Number(sumLeftValue)),
   });
 
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const openModal = useCallback(() => {
-    setModalOpen(true);
+  const showNameDialog = useCallback(() => {
+    setNameDialogVisible(true);
   }, []);
 
-  const closeModal = useCallback(() => {
-    setModalOpen(false);
+  const closeNameDialog = useCallback(() => {
+    setNameDialogVisible(false);
   }, []);
 
   const onModalInputConfirm = useCallback((value: string) => {
-    closeModal();
+    closeNameDialog();
     setName(value);
+  }, []);
+
+  const showCalendarDialog = useCallback(() => {
+    setCalendarDialogVisible(true);
+  }, []);
+
+  const closeCalendarDialog = useCallback(() => {
+    setCalendarDialogVisible(false);
   }, []);
 
   return (
@@ -133,22 +155,78 @@ const ExpenseCalculator = ({ onConfirm }: { onConfirm: CalculatorHandler<number>
               )}
             </>
           )}
-          <Text text60H white marginL-2 marginT-8>
+          <Text text60H white marginL-s1 marginT-s2>
             ₽
           </Text>
         </View>
       </View>
-      <View flex padding-4>
-        <View paddingH-8 paddingB-8>
-          <Text t1I textColor grey30 center onPress={openModal} style={styles.nameText}>
+      <View flex padding-s1>
+        <View paddingH-s2 paddingB-s2>
+          <Text t1I textColor grey30 center onPress={showNameDialog} style={styles.nameText}>
             {name || 'Название'}
           </Text>
         </View>
         <CalculatorKeys onPress={calclatorKeyTapHandler} />
-        <Modal transparent animationType="fade" visible={modalOpen} onRequestClose={closeModal}>
+        <Modal
+          transparent
+          animationType="fade"
+          visible={nameDialogVisible}
+          onRequestClose={closeNameDialog}
+        >
           <ModalInput onConfirm={onModalInputConfirm} initialValue={name} />
         </Modal>
       </View>
+      <Dialog
+        overlayBackgroundColor={Colors.rgba(Colors.black, 0.6)}
+        visible={calendarDialogVisible}
+        onDismiss={closeCalendarDialog}
+        containerStyle={{
+          borderRadius: BorderRadiuses.br40,
+        }}
+      >
+        <View bg-white padding-s1>
+          <Calendar
+            firstDay={1}
+            maxDate={new XDate('2022-05-28').toString('yyyy-MM-dd')}
+            style={{ backgroundColor: Colors.transparent }}
+            markingType="period"
+            markedDates={{
+              '2022-05-04': {
+                startingDay: true,
+                color: Colors.primary,
+                textColor: Colors.white,
+              },
+              ...Object.fromEntries(
+                Array(13)
+                  .fill(0)
+                  .map((_, i) => {
+                    const sum = 5 + i;
+                    const day = sum <= 9 ? `0${sum}` : sum;
+                    return [
+                      `2022-05-${day}`,
+                      { color: Colors.getColorTint(Colors.primary, 40), textColor: Colors.white },
+                    ];
+                  }),
+              ),
+              '2022-05-18': {
+                endingDay: true,
+                color: Colors.primary,
+                textColor: Colors.white,
+              },
+            }}
+          />
+          <View row right paddingV-s2 paddingH-s4>
+            <Button
+              link
+              labelStyle={Typography.t1B}
+              onPress={closeCalendarDialog}
+              color={Colors.$textDanger}
+              label="Отмена"
+            />
+            <Button marginL-s4 labelStyle={Typography.t1B} link label="Ок" />
+          </View>
+        </View>
+      </Dialog>
     </View>
   );
 };
@@ -212,3 +290,5 @@ const styles = StyleSheet.create({
 });
 
 export default memo(ExpenseCalculator);
+
+console.log(new XDate('2022-05-28').toString('yyyy-MM-dd'));

@@ -51,6 +51,11 @@ Typography.loadTypographies({
     lineHeight: Typography.text70?.lineHeight,
     fontFamily: OpenSans.w400I,
   },
+  t1B: {
+    fontSize: Typography.text70?.fontSize,
+    lineHeight: Typography.text70?.lineHeight,
+    fontFamily: OpenSans.w600,
+  },
   t2: {
     fontSize: Typography.text80?.fontSize,
     lineHeight: Typography.text80?.lineHeight,

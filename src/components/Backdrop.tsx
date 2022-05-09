@@ -16,7 +16,7 @@ const Backdrop = (props: BackdropProps) => {
 const styles = StyleSheet.create({
   backdrop: {
     flexGrow: 1,
-    backgroundColor: Colors.rgba(Colors.black, 0.6),
+    backgroundColor: Colors.backdrop,
   },
 });
 
