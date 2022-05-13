@@ -32,6 +32,7 @@ import SafeAreaView from '../components/SafeAreaView';
 import ExpenseCard, { ExpenseCardProps } from '../components/ExpenseCard';
 import dimensions from '../constants/dimensions';
 import { IconSizes } from '../styles/sizes';
+import { useBackgroundCalendar } from '../app-background-components/BackgroundCalendar';
 
 const BALANCE_VIEW_DEFAULT_HEIGHT = 200;
 const BALANCE_VIEW_MIN_HEIGHT = 70;
@@ -46,6 +47,8 @@ const Main = () => {
   const navigation = useNavigation();
   const scrollY = useSharedValue(0);
   const showAddButton = useSharedValue(true);
+
+  const { setBackgroundCalendarActiveTrue } = useBackgroundCalendar();
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (e, ctx: { prevScrollY: number }) => {
@@ -146,11 +149,7 @@ const Main = () => {
           scrollEventThrottle={16}
         />
         <View reanimated absB absR marginB-16 marginR-16 style={addButtonViewAnimatedStyle}>
-          <Button
-            padding-8
-            iconSource={PlusIcon}
-            onPress={() => navigation.navigate('AddExpense')}
-          />
+          <Button padding-8 iconSource={PlusIcon} onPress={setBackgroundCalendarActiveTrue} />
         </View>
       </View>
     </SafeAreaView>
