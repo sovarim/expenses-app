@@ -2,7 +2,7 @@ import { createContext, ReactNode, useCallback, useMemo } from 'react';
 import { useSharedValue, SharedValue } from 'react-native-reanimated';
 
 export type AppBackgroundComponentsContext = {
-  backgroundCalendarActive: SharedValue<boolean> | null;
+  backgroundCalendarActive: SharedValue<boolean>;
   setBackgroundCalendarActiveTrue: () => void;
   setBackgroundCalendarActiveFalse: () => void;
 };
@@ -15,7 +15,9 @@ export type AppBackgroundComponentsProviderProps = {
 const voidFunction = () => {};
 
 export const AppBackgroundComponentsContext = createContext<AppBackgroundComponentsContext>({
-  backgroundCalendarActive: null,
+  backgroundCalendarActive: {
+    value: false,
+  },
   setBackgroundCalendarActiveFalse: voidFunction,
   setBackgroundCalendarActiveTrue: voidFunction,
 });

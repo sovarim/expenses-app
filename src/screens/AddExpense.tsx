@@ -9,11 +9,11 @@ import { ExpenseCalculator } from '../components/ExpenseCalculator';
 const AddExpense = () => {
   const [budget, setBudget] = useState('');
   const [name, setName] = useState('');
+
   return (
     <Backdrop style={styles.root}>
       <View bottom bg-screenBG style={styles.container}>
         <ExpenseCalculator
-          calendarMarkingType="period"
           onConfirm={(value) => {
             console.log(value);
           }}

@@ -1,17 +1,10 @@
 import { memo, useCallback, useEffect, useState } from 'react';
-import {
-  Colors,
-  Text,
-  Typography,
-  View,
-  Button,
-  BorderRadiuses,
-  Dialog,
-} from 'react-native-ui-lib';
+import { Colors, Typography } from 'react-native-ui-lib/style';
+import View from 'react-native-ui-lib/view';
+import Text from 'react-native-ui-lib/text';
 import { FormattedNumber } from 'react-intl';
-import { StyleSheet, Modal } from 'react-native';
-import XDate from 'xdate';
-import { MarkingTypes } from 'react-native-calendars/src/types';
+import { StyleSheet, Modal, BackHandler } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { OpenSans } from '../../styles/fonts';
 import CalculatorKeys, { CalculatorKey } from '../CalculatorKeys';
 import useCalculatorKeyTapHandler, {
@@ -22,12 +15,10 @@ import isLastDot from '../../utils/isLastDot';
 import limitSymbolsAfterDot from '../../utils/limitSymbolsAfterDot';
 import removeLastSymbol from '../../utils/removeLastSymbol';
 import ExpensesModalInput from './ExpensesModalInput';
-import CustomizedCalendar from '../CustomizedCalendar';
-import useIsDark from '../../hooks/useIsDark';
+import { useBackgroundCalendar } from '../../app-background-components/BackgroundCalendar';
 
 export type ExpenseCalculatorProps = {
   onConfirm: CalculatorHandler<number>;
-  calendarMarkingType?: MarkingTypes;
   onChange?: CalculatorHandler<string>;
   onNameChange?: CalculatorHandler<string>;
   nameValue: string;
@@ -43,17 +34,20 @@ const removeSymbol = (prev: string) => removeLastSymbol(prev);
 
 const ExpenseCalculator = ({
   onConfirm,
-  calendarMarkingType = 'dot',
   onChange,
   nameValue,
   onNameChange,
 }: ExpenseCalculatorProps) => {
-  const isDark = useIsDark();
   const [sumLeftValue, setSumLeftValue] = useState('0');
   const [sumRightValue, setSumRightValue] = useState('');
   const [currentFuctionKey, setCurrentFuctionKey] = useState<CalculatorKey | null>(null);
   const [nameDialogVisible, setNameDialogVisible] = useState(false);
-  const [calendarDialogVisible, setCalendarDialogVisible] = useState(false);
+
+  const {
+    setBackgroundCalendarActiveTrue,
+    backgroundCalendarActive,
+    setBackgroundCalendarActiveFalse,
+  } = useBackgroundCalendar();
 
   const calclatorKeyTapHandler = useCalculatorKeyTapHandler({
     onCommaTap: (key) => {
@@ -87,7 +81,7 @@ const ExpenseCalculator = ({
       setCurrentFuctionKey(key);
     },
     onDate: () => {
-      showCalendarDialog();
+      setBackgroundCalendarActiveTrue();
     },
     onResult: () => {
       if (currentFuctionKey) {
@@ -105,6 +99,19 @@ const ExpenseCalculator = ({
     onConfirm: () => onConfirm(Number(sumLeftValue)),
   });
 
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (backgroundCalendarActive.value) {
+          setBackgroundCalendarActiveFalse();
+          return true;
+        }
+        return false;
+      });
+      return () => backHandler.remove();
+    }, []),
+  );
+
   useEffect(() => {
     onChange?.(sumRightValue);
   }, [sumRightValue]);
@@ -120,14 +127,6 @@ const ExpenseCalculator = ({
   const onModalInputConfirm = useCallback((value: string) => {
     closeNameDialog();
     onNameChange?.(value);
-  }, []);
-
-  const showCalendarDialog = useCallback(() => {
-    setCalendarDialogVisible(true);
-  }, []);
-
-  const closeCalendarDialog = useCallback(() => {
-    setCalendarDialogVisible(false);
   }, []);
 
   return (
@@ -192,57 +191,6 @@ const ExpenseCalculator = ({
           <ExpensesModalInput initialValue={nameValue} onConfirm={onModalInputConfirm} />
         </Modal>
       </View>
-      <Dialog
-        overlayBackgroundColor={Colors.rgba(Colors.black, 0.6)}
-        visible={calendarDialogVisible}
-        onDismiss={closeCalendarDialog}
-        containerStyle={{
-          borderRadius: BorderRadiuses.br40,
-        }}
-      >
-        <View style={{ backgroundColor: isDark ? Colors.screenBG : Colors.white }} padding-s1>
-          <CustomizedCalendar
-            background="transparent"
-            firstDay={1}
-            maxDate={new XDate('2022-05-28').toString('yyyy-MM-dd')}
-            markingType={calendarMarkingType}
-            markedDates={{
-              '2022-05-04': {
-                startingDay: true,
-                color: Colors.primary,
-                textColor: Colors.white,
-              },
-              ...Object.fromEntries(
-                Array(13)
-                  .fill(0)
-                  .map((_, i) => {
-                    const sum = 5 + i;
-                    const day = sum <= 9 ? `0${sum}` : sum;
-                    return [
-                      `2022-05-${day}`,
-                      { color: Colors.getColorTint(Colors.primary, 40), textColor: Colors.white },
-                    ];
-                  }),
-              ),
-              '2022-05-18': {
-                endingDay: true,
-                color: Colors.primary,
-                textColor: Colors.white,
-              },
-            }}
-          />
-          <View row right paddingV-s2 paddingH-s4>
-            <Button
-              link
-              labelStyle={Typography.t1B}
-              onPress={closeCalendarDialog}
-              color={Colors.$textDanger}
-              label="Отмена"
-            />
-            <Button marginL-s4 labelStyle={Typography.t1B} link label="Ок" />
-          </View>
-        </View>
-      </Dialog>
     </View>
   );
 };
